@@ -19,6 +19,7 @@
 #include <arm_compute/runtime/NEON/functions/NEFullyConnectedLayer.h>
 #include <arm_compute/runtime/NEON/functions/NEFullyConnectedHybridLayer.h>
 #include <arm_compute/runtime/NEON/functions/NEFullyConnectedLayerEx.h>
+#include "src/core/helpers/AutoConfiguration.h"
 
 using namespace arm_compute;
 
@@ -53,7 +54,7 @@ void NEFullyConnectedReshapingLayer::configure(const arm_compute::ITensor *input
     }
     else
     {
-      assert(kernel_type == KernelType::PREPROCESSED_WEIGHTS);
+      ARM_COMPUTE_ERROR_ON(kernel_type != KernelType::PREPROCESSED_WEIGHTS);
 
       bool is_hybrid = input->info()->data_type() == DataType::F32 &&
                        (weights->info()->data_type() == DataType::S8 ||

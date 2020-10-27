@@ -43,7 +43,7 @@
 
 #include "arm_compute/runtime/CL/ICLSimpleFunction.h"
 
-#include "arm_compute/core/CL/kernels/CLGEMMMatrixAccumulateBiasesKernel.h"
+//#include "arm_compute/core/CL/kernels/CLGEMMMatrixAccumulateBiasesKernel.h"
 #include "arm_compute/core/CL/kernels/CLMultiplyScaleFactorKernel.h"
 #include "arm_compute/core/CL/kernels/CLQuantizationSymmetricKernel.h"
 #include "arm_compute/core/CL/kernels/CLScaleFactorSymm8Kernel.h"
@@ -170,7 +170,7 @@ private:
   CLQuantizationSymmetricKernel _quant_input_kernel;
   CLGEMMLowpMatrixMultiplyCore _mm_gemmlowp;
   CLMultiplyScaleFactorKernel _multiply_scale_kernel;
-  CLGEMMMatrixAccumulateBiasesKernel _accumulate_biases_kernel; // TODO(COMPMID-1889): Use CLGEMM to
+  //CLGEMMMatrixAccumulateBiasesKernel _accumulate_biases_kernel; // TODO(COMPMID-1889): Use CLGEMM to
                                                                 // add bias in
                                                                 // CLFullyConnectedHybridLayer
   CLTensor _reshape_weights_output;

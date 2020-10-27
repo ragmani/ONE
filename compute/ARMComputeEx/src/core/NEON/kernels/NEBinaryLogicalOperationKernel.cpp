@@ -43,10 +43,10 @@
 #include "arm_compute/core/Error.h"
 #include "arm_compute/core/Helpers.h"
 #include "arm_compute/core/ITensor.h"
-#include "arm_compute/core/NEON/wrapper/wrapper.h"
 #include "arm_compute/core/NEON/NEElementwiseOperationFuncs.h"
 #include "arm_compute/core/TensorInfo.h"
 #include "arm_compute/core/Validate.h"
+#include "src/core/NEON/wrapper/intrinsics/intrinsics.h"
 
 #include <algorithm>
 #include <arm_neon.h>
@@ -194,7 +194,7 @@ void NEBinaryLogicalOperationKernel::configure(BinaryLogicalOperation op, const 
                                                const ITensor *input2, ITensor *output)
 {
   ARM_COMPUTE_ERROR_THROW_ON(validate_arguments(*input1->info(), *input2->info(), *output->info()));
-  configure_common(input1, input2, output);
+  configure_common(input1->info(), input2->info(), output->info());
   switch (op)
   {
     case BinaryLogicalOperation::AND:

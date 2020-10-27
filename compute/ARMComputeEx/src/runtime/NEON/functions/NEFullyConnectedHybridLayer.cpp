@@ -46,6 +46,7 @@
 #include "arm_compute/core/utils/misc/ShapeCalculator.h"
 #include "arm_compute/core/utils/quantization/AsymmHelpers.h"
 #include "arm_compute/runtime/NEON/NEScheduler.h"
+#include "support/MemorySupport.h"
 
 #include <algorithm>
 #include <cmath>
@@ -80,7 +81,8 @@ Status NEFullyConnectedHybridLayerReshapeWeights::validate(const ITensorInfo *in
 NEFullyConnectedHybridLayer::NEFullyConnectedHybridLayer(
     std::shared_ptr<IMemoryManager> memory_manager)
     : _memory_group(std::move(memory_manager)), _reshape_weights_function(), _quant_input_kernel(),
-      _mm_gemmlowp(), _accumulate_biases_kernel(), _reshape_weights_output(), _quantized_input(),
+      //_mm_gemmlowp(), _accumulate_biases_kernel(), _reshape_weights_output(), _quantized_input(),
+      _mm_gemmlowp(),  _reshape_weights_output(), _quantized_input(),
       _scale_factor(), _original_weights(nullptr), _are_weights_reshaped(false),
       _accumulate_biases(false), _is_prepared(false)
 {
@@ -116,7 +118,7 @@ void NEFullyConnectedHybridLayer::configure(const ITensor *input, const ITensor 
     _accumulate_biases = true;
 
     // Configure accumulate biases kernel
-    _accumulate_biases_kernel.configure(output, biases);
+    //_accumulate_biases_kernel.configure(output, biases);
   }
 
   // With the Fully Connected layer we can have 4 different cases:
@@ -202,7 +204,7 @@ Status NEFullyConnectedHybridLayer::validate(const ITensorInfo *input, const ITe
   if (biases != nullptr)
   {
     ARM_COMPUTE_RETURN_ERROR_ON_MISMATCHING_DATA_TYPES(input, biases);
-    ARM_COMPUTE_RETURN_ON_ERROR(NEGEMMMatrixAccumulateBiasesKernel::validate(output, biases));
+    //ARM_COMPUTE_RETURN_ON_ERROR(NEGEMMMatrixAccumulateBiasesKernel::validate(output, biases));
   }
 
   // With the Fully Connected layer we can have 4 different cases:
@@ -261,7 +263,7 @@ void NEFullyConnectedHybridLayer::run()
   // Accumulate biases if provided
   if (_accumulate_biases)
   {
-    NEScheduler::get().schedule(&_accumulate_biases_kernel, Window::DimY);
+    //NEScheduler::get().schedule(&_accumulate_biases_kernel, Window::DimY);
   }
 }
 

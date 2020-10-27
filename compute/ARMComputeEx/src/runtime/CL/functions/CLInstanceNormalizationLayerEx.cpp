@@ -42,6 +42,7 @@
 
 #include "arm_compute/core/CL/kernels/CLInstanceNormalizationLayerKernelEx.h"
 #include "arm_compute/core/Types.h"
+#include "support/MemorySupport.h"
 
 namespace arm_compute
 {

@@ -82,7 +82,8 @@ Status CLFullyConnectedHybridLayerReshapeWeights::validate(const ITensorInfo *in
 CLFullyConnectedHybridLayer::CLFullyConnectedHybridLayer(
     std::shared_ptr<IMemoryManager> memory_manager)
     : _memory_group(memory_manager), _reshape_weights_kernel(), _quant_input_kernel(),
-      _mm_gemmlowp(memory_manager), _multiply_scale_kernel(), _accumulate_biases_kernel(),
+      //_mm_gemmlowp(memory_manager), _multiply_scale_kernel(), _accumulate_biases_kernel(),
+      _mm_gemmlowp(memory_manager), _multiply_scale_kernel(),
       _reshape_weights_output(), _quantized_input(), _scale_factor(), _gemmlowp_output(),
       _are_weights_reshaped(true), _accumulate_biases(false), _is_prepared(false),
       _original_weights(nullptr)
@@ -123,8 +124,8 @@ void CLFullyConnectedHybridLayer::configure(const ICLTensor *input, const ICLTen
     _accumulate_biases = true;
 
     // Configure accumulate biases kernel
-    _accumulate_biases_kernel.set_target(CLScheduler::get().target());
-    _accumulate_biases_kernel.configure(output, biases);
+    //_accumulate_biases_kernel.set_target(CLScheduler::get().target());
+    //_accumulate_biases_kernel.configure(output, biases);
   }
 
   const ICLTensor *weights_to_use = weights;
@@ -206,7 +207,7 @@ Status CLFullyConnectedHybridLayer::validate(const ITensorInfo *input, const ITe
 
   bool weights_reshaped = fc_info.transpose_weights ? fc_info.are_weights_reshaped : true;
   bool is_fc_after_conv = true;
-  const GPUTarget gpu_target = CLScheduler::get().target();
+  //const GPUTarget gpu_target = CLScheduler::get().target();
 
   const ITensorInfo &reshaped_weights =
       TensorInfo(weights->clone()->set_is_resizable(true).reset_padding().set_tensor_shape(
@@ -216,8 +217,8 @@ Status CLFullyConnectedHybridLayer::validate(const ITensorInfo *input, const ITe
   if (biases != nullptr)
   {
     ARM_COMPUTE_RETURN_ERROR_ON_MISMATCHING_DATA_TYPES(input, biases);
-    ARM_COMPUTE_RETURN_ON_ERROR(
-        CLGEMMMatrixAccumulateBiasesKernel::validate(output, biases, gpu_target));
+    //ARM_COMPUTE_RETURN_ON_ERROR(
+    //    CLGEMMMatrixAccumulateBiasesKernel::validate(output, biases, gpu_target));
   }
 
   // With the Fully Connected layer we can have 4 different cases:
@@ -299,7 +300,7 @@ void CLFullyConnectedHybridLayer::run()
   // Accumulate biases if provided
   if (_accumulate_biases)
   {
-    CLScheduler::get().enqueue(_accumulate_biases_kernel);
+    //CLScheduler::get().enqueue(_accumulate_biases_kernel);
   }
 }
 

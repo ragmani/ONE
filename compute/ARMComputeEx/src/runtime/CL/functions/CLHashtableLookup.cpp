@@ -41,6 +41,7 @@
 #include "arm_compute/runtime/CL/functions/CLHashtableLookup.h"
 
 #include "arm_compute/core/CL/kernels/CLHashtableLookupKernel.h"
+#include "support/MemorySupport.h"
 
 using namespace arm_compute;
 

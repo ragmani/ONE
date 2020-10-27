@@ -41,6 +41,7 @@
 #include "arm_compute/runtime/CL/functions/CLEmbeddingLookup.h"
 
 #include "arm_compute/core/CL/kernels/CLEmbeddingLookupKernel.h"
+#include "support/MemorySupport.h"
 
 using namespace arm_compute;
 

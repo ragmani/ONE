@@ -42,6 +42,7 @@
 
 #include "arm_compute/core/TensorShape.h"
 #include "arm_compute/runtime/CL/CLScheduler.h"
+#include "support/MemorySupport.h"
 
 using namespace arm_compute;
 

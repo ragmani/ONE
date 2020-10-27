@@ -45,7 +45,8 @@
 #include "arm_compute/core/Types.h"
 #include "arm_compute/core/Validate.h"
 #include "arm_compute/core/utils/misc/ShapeCalculator.h"
-#include "arm_compute/runtime/Utils.h"
+#include "src/core/helpers/AutoConfiguration.h"
+#include "src/runtime/Utils.h"
 
 namespace arm_compute
 {
@@ -66,7 +67,7 @@ Status CLArgMinMaxLayerEx::validate(const ITensorInfo *input, int axis, const IT
                                   "Reduction axis greater than max number of dimensions");
   ARM_COMPUTE_RETURN_ERROR_ON_MSG(axis > 3, "Unsupported reduction axis");
   const unsigned int num_of_stages =
-      calculate_number_of_stages_only_x_axis(input->dimension(0), axis);
+      utils::calculate_number_of_stages_only_x_axis(input->dimension(0), axis);
 
   DataType output_data_type = DataType::S32;
   TensorInfo not_reshaped_output;
@@ -140,7 +141,7 @@ void CLArgMinMaxLayerEx::configure(const ICLTensor *input, int axis, ICLTensor *
                                    const ReductionOperation &op)
 {
   ARM_COMPUTE_ERROR_ON_NULLPTR(input, output);
-  _num_of_stages = calculate_number_of_stages_only_x_axis(input->info()->dimension(0), axis);
+  _num_of_stages = utils::calculate_number_of_stages_only_x_axis(input->info()->dimension(0), axis);
   _reduction_axis = axis;
 
   const TensorShape output_shape = arm_compute::misc::shape_calculator::compute_reduced_shape(
@@ -204,7 +205,7 @@ void CLArgMinMaxLayerEx::configure(const ICLTensor *input, int axis, ICLTensor *
                                                     &_not_reshaped_output, axis, op);
     _results_vector[last_stage - 1].allocator()->allocate();
   }
-  _reshape_kernel.configure(&_not_reshaped_output, output);
+  _reshape_kernel.configure(CLKernelLibrary::get().get_compile_context(), _not_reshaped_output.info(), output->info());
   _not_reshaped_output.allocator()->allocate();
 }
 

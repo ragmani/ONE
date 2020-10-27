@@ -40,9 +40,10 @@
 
 #include "arm_compute/runtime/NEON/functions/NEReduceSum.h"
 
-#include "arm_compute/core/CPP/Validate.h"
 #include "arm_compute/core/Helpers.h"
 #include "arm_compute/runtime/NEON/NEScheduler.h"
+#include "src/core/CPP/Validate.h"
+#include "src/core/helpers/AutoConfiguration.h"
 
 using namespace arm_compute;
 

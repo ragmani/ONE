@@ -44,7 +44,7 @@
 #include "arm_compute/runtime/IFunction.h"
 
 #include "arm_compute/core/NEON/kernels/NEFlattenLayerKernel.h"
-#include "arm_compute/core/NEON/kernels/NEGEMMMatrixAccumulateBiasesKernel.h"
+//#include "arm_compute/core/NEON/kernels/NEGEMMMatrixAccumulateBiasesKernel.h"
 #include "arm_compute/core/NEON/kernels/NETransposeKernel.h"
 #include "arm_compute/runtime/MemoryGroup.h"
 #include "arm_compute/runtime/NEON/functions/NEFullyConnectedLayer.h"
@@ -147,7 +147,7 @@ private:
   NEGEMM _mm_gemm;
   NEGEMMLowpMatrixMultiplyCore _mm_gemmlowp;
   NEGEMMLowpQuantizeDownInt32ToUint8ScaleByFixedPoint _gemmlowp_output_stage;
-  NEGEMMMatrixAccumulateBiasesKernel _accumulate_biases_kernel;
+  //NEGEMMMatrixAccumulateBiasesKernel _accumulate_biases_kernel;
   Tensor _flatten_output;
   Tensor _gemmlowp_output;
   Tensor _converted_weights_output;

@@ -283,18 +283,18 @@ void KernelGenerator::visit(const ir::operation::Concat &node)
   }
 
   auto output_tensor = _tensor_reg->getAclTensor(ofm_index);
-  std::vector<::arm_compute::ITensor *> input_tensors;
-  for (const auto &ifm_ind : input_indexes)
-    input_tensors.emplace_back(_tensor_reg->getAclTensor(ifm_ind)->handle());
 
   std::unique_ptr<::arm_compute::IFunction> fn;
   if (input_indexes.size() < 2)
   {
-    fn = acl_common::generateLayer<arm_compute::NECopy>(input_tensors.at(0),
+    fn = acl_common::generateLayer<arm_compute::NECopy>(_tensor_reg->getAclTensor(input_indexes.at(0))->handle(),
                                                         output_tensor->handle());
   }
   else
   {
+    std::vector<const arm_compute::ITensor *> input_tensors;
+    for (const auto &ifm_ind : input_indexes)
+      input_tensors.emplace_back(_tensor_reg->getAclTensor(ifm_ind)->handle());
     const auto rank = _ctx.at(ofm_index).shape().rank();
     const auto frontend_layout = _current_op_seq_layout;
     const auto backend_layout = output_tensor->layout();
@@ -903,9 +903,9 @@ void KernelGenerator::visit(const ir::operation::ResizeBilinear &node)
   auto ifm_tensor = _tensor_reg->getAclTensor(ifm_index);
 
   auto fn = acl_common::generateLayer<arm_compute::NEScale>(
-      ifm_tensor->handle(), ofm_tensor->handle(), ::arm_compute::InterpolationPolicy::BILINEAR,
+      ifm_tensor->handle(), ofm_tensor->handle(), arm_compute::ScaleKernelInfo{arm_compute::InterpolationPolicy::BILINEAR,
       ::arm_compute::BorderMode::REPLICATE, ::arm_compute::PixelValue(0.f),
-      ::arm_compute::SamplingPolicy::TOP_LEFT);
+      ::arm_compute::SamplingPolicy::TOP_LEFT});
 
   _return_fn = asAclFunction(std::move(fn));
 }

@@ -41,6 +41,7 @@
 #include "arm_compute/runtime/CL/functions/CLNeg.h"
 
 #include "arm_compute/core/CL/kernels/CLNegKernel.h"
+#include "support/MemorySupport.h"
 
 using namespace arm_compute;
 

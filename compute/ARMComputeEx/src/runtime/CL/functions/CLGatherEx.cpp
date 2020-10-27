@@ -42,6 +42,7 @@
 
 #include "arm_compute/core/CL/ICLTensor.h"
 #include "arm_compute/core/CL/kernels/CLGatherExKernel.h"
+#include "support/MemorySupport.h"
 
 using namespace arm_compute;
 

@@ -42,7 +42,7 @@
 #define __ARM_COMPUTE_NEFULLYCONNECTEDHYBRIDLAYER_H__
 
 #include "arm_compute/core/NEON/kernels/NEQuantizationSymmetricKernel.h"
-#include "arm_compute/core/NEON/kernels/NEGEMMMatrixAccumulateBiasesKernel.h"
+//#include "arm_compute/core/NEON/kernels/NEGEMMMatrixAccumulateBiasesKernel.h"
 #include "arm_compute/core/NEON/kernels/NEMuliplyScaleFactorKernel.h"
 #include "arm_compute/core/NEON/kernels/NETransposeKernel.h"
 #include "arm_compute/runtime/MemoryGroup.h"
@@ -166,7 +166,7 @@ private:
   NEQuantizationSymmetricKernel _quant_input_kernel;
   NEGEMMLowpMatrixMultiplyCore _mm_gemmlowp;
   NEMultiplyScaleFactorKernel _multiply_scale_kernel;
-  NEGEMMMatrixAccumulateBiasesKernel _accumulate_biases_kernel;
+  //NEGEMMMatrixAccumulateBiasesKernel _accumulate_biases_kernel;
   Tensor _reshape_weights_output;
   Tensor _quantized_input;
   Tensor _scale_factor;

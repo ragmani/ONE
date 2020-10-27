@@ -41,6 +41,7 @@
 #include "arm_compute/runtime/CL/functions/CLCastBool.h"
 
 #include "arm_compute/core/CL/kernels/CLCastBoolKernel.h"
+#include "support/MemorySupport.h"
 
 using namespace arm_compute;
 

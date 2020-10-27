@@ -44,6 +44,9 @@
 #include "arm_compute/core/CL/CLKernelLibraryEx.h"
 #include "arm_compute/core/CL/ICLTensor.h"
 #include "support/StringSupport.h"
+#include "support/MemorySupport.h"
+#include "src/core/helpers/AutoConfiguration.h"
+#include "src/core/helpers/WindowHelpers.h"
 
 using namespace arm_compute;
 

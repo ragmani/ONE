@@ -49,7 +49,7 @@ namespace arm_compute
 {
 void NEGatherEx::configure(const ITensor *input, const ITensor *indices, ITensor *output, int axis)
 {
-  auto k = support::cpp14::make_unique<NEGatherKernelEx>();
+  auto k = arm_compute::support::cpp14::make_unique<NEGatherKernelEx>();
   k->configure(input, indices, output, axis);
   _kernel = std::move(k);
 }

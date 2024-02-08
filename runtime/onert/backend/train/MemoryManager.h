@@ -28,6 +28,28 @@ namespace train
 
 using MemoryManager = backend::basic::MemoryManager;
 
+class TempMemoryManager
+{
+public:
+  TempMemoryManager();
+  virtual ~TempMemoryManager() = default;
+
+  void allocate(void);
+  uint8_t *getBuffer(const TempTensorIndex &ind) const;
+  void deallocate(void) { _mem_alloc->release(); }
+
+  void claimPlan(const TempTensorIndex &ind, uint32_t size);
+  void releasePlan(const TempTensorIndex &ind);
+
+private:
+  basic::IMemoryPlanner *createMemoryPlanner();
+
+private:
+  std::unordered_map<TempTensorIndex, basic::Block> _tensor_mem_map;
+  std::shared_ptr<basic::IMemoryPlanner> _mem_planner;
+  std::shared_ptr<basic::Allocator> _mem_alloc;
+};
+
 } // namespace train
 } // namespace backend
 } // namespace onert

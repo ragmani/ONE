@@ -47,6 +47,7 @@ public:
 using TrainableTensor = basic::train::TrainableTensor;
 using BackPropTensor = Tensor;
 using GradientTensor = Tensor;
+using TempTensor = Tensor;
 
 } // namespace train
 } // namespace backend

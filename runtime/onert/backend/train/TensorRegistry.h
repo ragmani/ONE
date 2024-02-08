@@ -19,6 +19,7 @@
 
 #include <backend/train/ITensorRegistry.h>
 
+#include "TempTensorIndex.h"
 #include "Tensor.h"
 
 namespace onert
@@ -28,8 +29,37 @@ namespace backend
 namespace train
 {
 
-using TensorRegistry =
-  PortableTensorRegistryTemplate<Tensor, TrainableTensor, BackPropTensor, GradientTensor>;
+class TensorRegistry
+  : public PortableTensorRegistryTemplate<Tensor, TrainableTensor, BackPropTensor, GradientTensor>
+{
+public:
+  TempTensor *getTempTensor(const TempTensorIndex &index)
+  {
+    auto tensor = _temp.find(index);
+    if (tensor != _temp.end())
+      return tensor->second.get();
+    return nullptr;
+  }
+
+  void setTempTensor(const TempTensorIndex &index, std::unique_ptr<TempTensor> tensor)
+  {
+    assert(tensor != nullptr);
+    auto itr = _temp.find(index);
+    if (itr != _temp.end())
+      throw std::runtime_error{
+        "Tried to set a temp tensor but another temp tensor already exists."};
+
+    _temp[index] = std::move(tensor);
+  }
+
+  const std::unordered_map<TempTensorIndex, std::unique_ptr<TempTensor>> &temp_tensors()
+  {
+    return _temp;
+  }
+
+private:
+  std::unordered_map<TempTensorIndex, std::unique_ptr<TempTensor>> _temp;
+};
 
 } // namespace train
 } // namespace backend

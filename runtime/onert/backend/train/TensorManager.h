@@ -22,6 +22,7 @@
 
 #include <ir/OperandIndexMap.h>
 #include <ir/OperandInfo.h>
+#include <set>
 
 namespace onert
 {
@@ -47,6 +48,7 @@ public:
   void allocateTrainableTensors();
   void allocateBackPropTensors();
   void allocateGradientTensors();
+  void allocateBackwardTempTensors();
   // TODO Add member functions to deallocate tensors
 
   void claimNonConstPlan(const ir::OperandIndex &ind);
@@ -57,12 +59,20 @@ public:
   void releaseBackPropPlan(const ir::OperandIndex &ind);
   void claimGradientPlan(const ir::OperandIndex &ind);
   void releaseGradientPlan(const ir::OperandIndex &ind);
+  void claimBackwardTempPlan(const ir::OperationIndex &op_index,
+                             const std::set<ir::OperandIndex> &indices);
 
 private:
   std::unique_ptr<MemoryManager> _nonconst_mgr;
   std::unique_ptr<MemoryManager> _trainable_mgr;
   std::unique_ptr<MemoryManager> _back_prop_mgr;
   std::unique_ptr<MemoryManager> _gradient_mgr;
+  // NOTE Temp tensors are volatile tensors that are only used in one place. Data stored in
+  //      the temp tensors in one place does not need to be guaranteed in another place.
+  //      Therefore, TensorManager does not need to be requested for release plans, and it
+  //      creates release plans on its own.
+  std::unique_ptr<MemoryManager> _temp_mgr;
+
   const std::shared_ptr<TensorRegistry> _tensors;
 };
 

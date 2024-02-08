@@ -61,6 +61,7 @@ TensorManager::TensorManager(const std::shared_ptr<TensorRegistry> &reg,
                              const std::string planner_id)
   : _nonconst_mgr{new MemoryManager(planner_id)}, _trainable_mgr{new MemoryManager(planner_id)},
     _back_prop_mgr{new MemoryManager(planner_id)}, _gradient_mgr{new MemoryManager(planner_id)},
+    _temp_mgr{new MemoryManager(util::getConfigString(util::config::CPU_MEMORY_PLANNER))},
     _tensors{reg}
 {
   // DO NOTHING
@@ -88,6 +89,23 @@ void TensorManager::allocateGradientTensors()
 {
   allocateMemory(_gradient_mgr.get(), _tensors->gradient_tensors(),
                  std::string{"GRADIENT TENSOR "});
+}
+
+void TensorManager::allocateBackwardTempTensors()
+{
+  _temp_mgr->allocate();
+
+  for (auto &&pair : _tensors->temp_tensors())
+  {
+    const auto &index = pair;
+    auto tensor = pair.second.get();
+    assert(!tensor->is_dynamic());
+
+    auto *buffer = _temp_mgr->getBuffer(index);
+    tensor->setBuffer(buffer);
+    VERBOSE(TensorManager) << "    TEMP TENSOR " << index << " : " << static_cast<void *>(buffer)
+                           << std::endl;
+  }
 }
 
 void TensorManager::claimNonConstPlan(const ir::OperandIndex &index)
@@ -152,6 +170,24 @@ void TensorManager::releaseGradientPlan(const ir::OperandIndex &index)
   assert(_tensors->getGradientTensor(index) && !_tensors->getGradientTensor(index)->is_dynamic());
 
   _gradient_mgr->releasePlan(index);
+}
+
+void TensorManager::claimBackwardTempPlan(const ir::OperationIndex &op_index,
+                                          const std::set<ir::OperandIndex> &indices)
+{
+  // Claim plan
+  for (const auto &index : indices)
+  {
+    const auto tensor = _tensors->getTempTensor(TempTensorIndex{op_index, index});
+    assert(tensor && !tensor->is_dynamic());
+
+    auto size = alignedSize(tensor->total_size(), _align);
+    _temp_mgr->claimPlan(index, size);
+  }
+
+  // Release Plan
+  for (const auto &index : indices)
+    _temp_mgr->releasePlan(index);
 }
 
 } // namespace train

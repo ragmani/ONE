@@ -56,6 +56,12 @@ backend::train::ITensorRegistry *BackendContext::genTrainingTensors()
       tensor_builder->notifyBackwardFirstUse(ind);
   });
 
+  for (const auto &op_ind : _tdata->op_order)
+  {
+    // Find temp tensor
+    // notify first use
+  }
+
   tensor_builder->allocateBackward();
 
   return _tensor_registry.get();

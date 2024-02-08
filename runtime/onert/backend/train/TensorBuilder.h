@@ -17,10 +17,12 @@
 #ifndef __ONERT_BACKEND_TRAIN_TENSOR_BUILDER_H__
 #define __ONERT_BACKEND_TRAIN_TENSOR_BUILDER_H__
 
+#include "TempTensorIndex.h"
 #include "TensorManager.h"
 #include "TensorRegistry.h"
 
 #include <exec/train/optimizer/Optimizer.h>
+#include <unordered_map>
 
 namespace onert
 {
@@ -54,10 +56,21 @@ public:
   void registerBackwardTensorInfo(const ir::OperandIndex &ind, const ir::OperandInfo &info,
                                   ir::Layout backend_layout);
 
+  /**
+   * @brief     Register informations of tensor used temporarily in backward to allocate on train
+   * backend
+   * @param[in] ind    TempTensor index
+   * @param[in] info   Operand information
+   * @param[in] layout Operand data layout
+   */
+  void registerBackwardTempTensorInfo(const TempTensorIndex &ind, const ir::OperandInfo &info,
+                                      ir::Layout backend_layout);
+
   // TODO Support memory plan of all tensors
   void notifyFirstUse(const ir::OperandIndex &);
   void notifyLastUse(const ir::OperandIndex &);
   void notifyBackwardFirstUse(const ir::OperandIndex &);
+  void notifyBackwardTempUse(const ir::OperationIndex &, const std::set<ir::OperandIndex> &);
 
   bool isRegistered(const ir::OperandIndex &) const;
   bool isRegisteredBackward(const ir::OperandIndex &) const;
@@ -70,6 +83,7 @@ private:
   std::unique_ptr<TensorManager> _tensor_mgr;
   ir::OperandIndexMap<ir::OperandInfo> _tensor_info_map;
   ir::OperandIndexMap<ir::OperandInfo> _backward_tensor_info_map;
+  std::unordered_map<TempTensorIndex, ir::OperandIndex> _temp_tensor_info_map;
   ir::OperandIndexMap<bool> _as_constants;
   const exec::train::optimizer::Optimizer *_optimizer;
 };

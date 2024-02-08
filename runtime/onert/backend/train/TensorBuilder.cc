@@ -91,6 +91,19 @@ void TensorBuilder::registerBackwardTensorInfo(const ir::OperandIndex &index,
   }
 }
 
+void TensorBuilder::registerBackwardTempTensorInfo(const TempTensorIndex &index,
+                                                   const ir::OperandInfo &info, ir::Layout layout)
+{
+  _temp_tensor_info_map.emplace(index, info);
+
+  // Train backend supports only one layout as NHWC
+  assert(layout == ir::Layout::NHWC);
+  assert(!info.isDynamic());
+
+  auto tensor = std::make_unique<TempTensor>(info, layout);
+  _tensor_reg->setTempTensor(index, std::move(tensor));
+}
+
 void TensorBuilder::notifyFirstUse(const ir::OperandIndex &index)
 {
   // TODO Support momory plan
@@ -122,6 +135,12 @@ void TensorBuilder::notifyBackwardFirstUse(const ir::OperandIndex &index)
   }
 }
 
+void TensorBuilder::notifyBackwardTempUse(const ir::OperationIndex &op_index,
+                                          const std::set<ir::OperandIndex> &indices)
+{
+  _tensor_mgr->claimBackwardTempPlan(op_index, indices);
+}
+
 bool TensorBuilder::isRegistered(const ir::OperandIndex &index) const
 {
   return _tensor_info_map.find(index) != _tensor_info_map.end();
@@ -142,6 +161,7 @@ void TensorBuilder::allocateBackward(void)
 {
   _tensor_mgr->allocateBackPropTensors();
   _tensor_mgr->allocateGradientTensors();
+  _tensor_mgr->allocateBackwardTempTensors();
 }
 
 } // namespace train

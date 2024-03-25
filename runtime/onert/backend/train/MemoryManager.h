@@ -17,6 +17,8 @@
 #ifndef __ONERT_BACKEND_TRAIN_MEMORY_MANAGER_H__
 #define __ONERT_BACKEND_TRAIN_MEMORY_MANAGER_H__
 
+#include "TempTensorIndex.h"
+
 #include <backend/basic/MemoryManager.h>
 
 namespace onert
@@ -40,9 +42,6 @@ public:
 
   void claimPlan(const TempTensorIndex &ind, uint32_t size);
   void releasePlan(const TempTensorIndex &ind);
-
-private:
-  basic::IMemoryPlanner *createMemoryPlanner();
 
 private:
   std::unordered_map<TempTensorIndex, basic::Block> _tensor_mem_map;

@@ -102,7 +102,7 @@ template <> struct hash<onert::backend::train::TempTensorIndex>
 
     assert(sizeof(op_index) <= 4);
     assert(sizeof(operand_index) <= 4);
-    static_assert(sizeof(size_t) >= sizeof(uint64_t));
+    static_assert(sizeof(size_t) >= sizeof(uint64_t), "TempTensorIndex's hash value cannnot be less than 64 bit.");
     return (static_cast<uint64_t>(op_index.value())) << 32 |
            static_cast<uint64_t>(operand_index.value());
   }

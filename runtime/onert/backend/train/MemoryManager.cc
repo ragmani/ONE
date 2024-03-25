@@ -16,9 +16,9 @@
 
 #include "MemoryManager.h"
 
-#include <backernd/basic/MemoryPlannerFactory.h>
-#include "util/ConfigSource.h"
-#include "util/logging.h"
+#include <backend/basic/MemoryPlanner.h>
+#include <util/ConfigSource.h>
+#include <util/logging.h>
 
 namespace onert
 {
@@ -27,27 +27,17 @@ namespace backend
 namespace train
 {
 
-TempMemoryManager::TempMemoryManager() : _mem_planner{createMemoryPlanner()}
+TempMemoryManager::TempMemoryManager() : _mem_planner{std::make_unique<basic::FirstFitPlanner>()}
 {
   // DO NOTHING
 }
 
-basic::IMemoryPlanner *TempMemoryManager::createMemoryPlanner()
+void TempMemoryManager::claimPlan(const TempTensorIndex &index, uint32_t size)
 {
-  return basic::MemoryPlannerFactory::get().create("FirstFit");
+  _mem_planner->claim(index, size);
 }
 
-basic::IMemoryPlanner *TempMemoryManager::createMemoryPlanner(const std::string planner_id)
-{
-  return basic::MemoryPlannerFactory::get().create(planner_id);
-}
-
-void TempMemoryManager::claimPlan(const TempTensorIndex &ind, uint32_t size)
-{
-  _mem_planner->claim(ind, size);
-}
-
-void TempMemoryManager::releasePlan(const TempTensorIndex &ind) { _mem_planner->release(ind); }
+void TempMemoryManager::releasePlan(const TempTensorIndex &index) { _mem_planner->release(index); }
 
 void TempMemoryManager::allocate(void)
 {
@@ -55,10 +45,10 @@ void TempMemoryManager::allocate(void)
   assert(_mem_alloc->base());
 }
 
-uint8_t *TempMemoryManager::getBuffer(const TempTensorIndex &ind) const
+uint8_t *TempMemoryManager::getBuffer(const TempTensorIndex &index) const
 {
-  assert(_mem_planner->memory_plans().find(ind) != _mem_planner->memory_plans().end());
-  const auto &mem_blk = _mem_planner->memory_plans().at(ind);
+  assert(_mem_planner->memory_plans().find(index) != _mem_planner->memory_plans().end());
+  const auto &mem_blk = _mem_planner->memory_plans().at(index);
   return _mem_alloc->base() + mem_blk.offset;
 }
 

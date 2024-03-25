@@ -16,7 +16,7 @@
 
 #include "MemoryPlannerFactory.h"
 
-#include "MemoryPlanner.h"
+#include <backend/basic/MemoryPlanner.h>
 
 namespace onert
 {

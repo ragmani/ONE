@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "MemoryPlanner.h"
 #include "util/logging.h"
+#include <backend/basic/MemoryPlanner.h>
 #include <cassert>
 
 namespace onert

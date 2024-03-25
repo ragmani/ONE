@@ -195,6 +195,7 @@ createBackendContexts(compiler::ILoweredGraph &lgraph, bool linear_executor,
     UNUSED_RELEASE(new_operand_ind);
     assert(new_operand_ind == operand_ind);
   });
+
   // Separate operations into partial graphs
   whole_graph.operations().iterate(
     [&](const ir::OperationIndex &op_ind, const ir::IOperation &operation) {

@@ -223,7 +223,7 @@ void LoweredGraph::dumpLowerInfo()
       };
 
       auto data_to_str = [](const ir::Data *data) {
-        return (data ? (std::to_string(data->size()) + " bytes") : "N/A");
+        return (data ? (std::to_string(data->size()) + " bytes") : std::string("N/A"));
       };
 
       std::string shape_str = shape_to_string(object.shape());

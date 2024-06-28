@@ -115,19 +115,19 @@ private:
 
 /**
  * @brief Type that provides index of operation node for training
- * @note TrainingOperationIndex is index of a forwarding node if "is_forward" member of
- *       TrainingIndex is true
- *       TrainingOperationIndex is index of a backwarding node if "is_forward" member of
- *       TrainingIndex is false
+ * @note TrainingOperationIndex can be index of a forwarding node if the member "_is_forward"
+ *       of TrainingIndex is true
+ *       TrainingOperationIndex can be index of a backwarding node if the membwr "_is_forward"
+ *       of TrainingIndex is false
  */
 using TrainingOperationIndex = TrainingIndex<OperationIndex>;
 
 /**
  * @brief Type that provides index of operand for training
- * @note TrainingOperandIndex is index of an operand for forwarding if the member "is_forward" of
- *       TrainingIndex is true
- *       TrainingOperandIndex is index of an operand only used in backwarding if the member
- * "is_forward" of TrainingIndex is false
+ * @note TrainingOperandIndex can be index of an operand used in forwarding if the member
+ *       "_is_forward" of TrainingIndex is true
+ *       TrainingOperandIndex can be index of an operand used in backwarding if the member
+ *       "_is_forward" of TrainingIndex is false
  */
 using TrainingOperandIndex = TrainingIndex<OperandIndex>;
 
@@ -159,6 +159,8 @@ template <> struct hash<onert::ir::train::TrainingOperationIndex>
     const bool is_forward = index.is_forward();
 
     assert(sizeof(op_index) <= 4);
+    assert((op_index.undefined() || op_index.value() < (1 << 16)) &&
+           "TrainingOperationIndex's hash creation error, operand_index is too big");
     static_assert(
       sizeof(size_t) >= sizeof(uint32_t),
       "TrainingOperationIndex's hash creation error, size_t size is less than uint32_t");
@@ -183,6 +185,8 @@ template <> struct hash<onert::ir::train::TrainingOperandIndex>
     const bool &is_forward = index.is_forward();
 
     assert(sizeof(operand_index) <= 4);
+    assert((operand_index.undefined() || operand_index.value() < (1 << 16)) &&
+           "TrainingOperandIndex's hash creation error, operand_index is too big");
     static_assert(sizeof(size_t) >= sizeof(uint32_t),
                   "TrainingOperandIndex's hash creation error, size_t size is less than uint32_t");
 

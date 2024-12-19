@@ -18,10 +18,9 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(libnnfw_api_pybind, m)
+// Bind the `tensorinfo` class
+void bind_tensorinfo(py::module_ &m)
 {
-  m.doc() = "nnfw python plugin";
-
   py::class_<tensorinfo>(m, "tensorinfo", "tensorinfo describes the type and shape of tensors")
     .def(py::init<>(), "The constructor of tensorinfo")
     .def_readwrite("dtype", &tensorinfo::dtype, "The data type")
@@ -30,7 +29,11 @@ PYBIND11_MODULE(libnnfw_api_pybind, m)
       "dims", [](const tensorinfo &ti) { return get_dims(ti); },
       [](tensorinfo &ti, const py::list &dims_list) { set_dims(ti, dims_list); },
       "The dimension of tensor. Maximum rank is 6 (NNFW_MAX_RANK).");
+}
 
+// Bind the `NNFW_SESSION` class with common inference APIs
+void bind_nnfw_session(py::module_ &m)
+{
   py::class_<NNFW_SESSION>(m, "nnfw_session")
     .def(
       py::init<const char *, const char *>(), py::arg("package_file_path"), py::arg("backends"),
@@ -223,4 +226,61 @@ PYBIND11_MODULE(libnnfw_api_pybind, m)
          "\tindex (int): Index of output\n"
          "Returns:\n"
          "\ttensorinfo: Tensor info (shape, type, etc)");
+}
+
+PYBIND11_MODULE(libnnfw_api_pybind, m)
+{
+  m.doc() = "nnfw python module officially";
+
+  // Bind common `tensorinfo` class
+  bind_tensorinfo(m);
+
+  // Bind common `NNFW_SESSION` class
+  bind_nnfw_session(m);
+}
+
+PYBIND11_MODULE(libnnfw_experimental, m)
+{
+  m.doc() = "NNFW Experimental module";
+
+  // Bind common `tensorinfo` class
+  bind_tensorinfo(m);
+
+  // Bind common `NNFW_SESSION` class
+  bind_nnfw_session(m);
+
+  // Add experimental APIs for the `NNFW_SESSION` class
+  py::class_<NNFW_SESSION>(m, "nnfw_session")
+    .def("train_get_traininfo", &NNFW_SESSION::train_get_traininfo,
+         "Retrieve training information for the model.")
+    .def("train_set_traininfo", &NNFW_SESSION::train_set_traininfo, py::arg("info"),
+         "Set training information for the model.")
+    .def("train", &NNFW_SESSION::train, py::arg("update_weights") = true,
+         "Run a training step, optionally updating weights.")
+    .def("train_get_loss", &NNFW_SESSION::train_get_loss, py::arg("index"),
+         "Retrieve the training loss for a specific index.")
+    .def("train_set_input", &NNFW_SESSION::train_set_input<float>, py::arg("index"),
+         py::arg("buffer"), "Set training input tensor for the given index (float).")
+    .def("train_set_input", &NNFW_SESSION::train_set_input<int>, py::arg("index"),
+         py::arg("buffer"), "Set training input tensor for the given index (int).")
+    .def("train_set_input", &NNFW_SESSION::train_set_input<uint8_t>, py::arg("index"),
+         py::arg("buffer"), "Set training input tensor for the given index (uint8).")
+    .def("train_set_expected", &NNFW_SESSION::train_set_expected<float>, py::arg("index"),
+         py::arg("buffer"), "Set expected output tensor for the given index (float).")
+    .def("train_set_expected", &NNFW_SESSION::train_set_expected<int>, py::arg("index"),
+         py::arg("buffer"), "Set expected output tensor for the given index (int).")
+    .def("train_set_expected", &NNFW_SESSION::train_set_expected<uint8_t>, py::arg("index"),
+         py::arg("buffer"), "Set expected output tensor for the given index (uint8).")
+    .def("train_set_output", &NNFW_SESSION::train_set_output<float>, py::arg("index"),
+         py::arg("buffer"), "Set output tensor for the given index (float).")
+    .def("train_set_output", &NNFW_SESSION::train_set_output<int>, py::arg("index"),
+         py::arg("buffer"), "Set output tensor for the given index (int).")
+    .def("train_set_output", &NNFW_SESSION::train_set_output<uint8_t>, py::arg("index"),
+         py::arg("buffer"), "Set output tensor for the given index (uint8).")
+    .def("train_export_circle", &NNFW_SESSION::train_export_circle, py::arg("path"),
+         "Export the trained model to a circle file.")
+    .def("train_import_checkpoint", &NNFW_SESSION::train_import_checkpoint, py::arg("path"),
+         "Import a training checkpoint from a file.")
+    .def("train_export_checkpoint", &NNFW_SESSION::train_export_checkpoint, py::arg("path"),
+         "Export the training checkpoint to a file.");
 }

@@ -243,3 +243,65 @@ tensorinfo NNFW_SESSION::output_tensorinfo(uint32_t index)
   }
   return ti;
 }
+
+//////////////////////////////////////////////
+// Experimental APIs for training
+//////////////////////////////////////////////
+nnfw_train_info NNFW_SESSION::train_get_traininfo()
+{
+  nnfw_train_info train_info = nnfw_train_info();
+  ensure_status(nnfw_train_get_traininfo(session, &train_info));
+  return train_info;
+}
+
+void NNFW_SESSION::train_set_traininfo(const nnfw_train_info *info)
+{
+  ensure_status(nnfw_train_set_traininfo(session, info));
+}
+
+void NNFW_SESSION::train(bool update_weights)
+{
+  ensure_status(nnfw_train(session, update_weights));
+}
+
+float NNFW_SESSION::train_get_loss(uint32_t index)
+{
+  float loss = 0.f;
+  ensure_status(nnfw_train_get_loss(session, index, &loss));
+  return loss;
+}
+
+void NNFW_SESSION::train_export_circle(const py::str &path)
+{
+  const char *c_str_path = path.cast<std::string>().c_str();
+  ensure_status(nnfw_train_export_circle(session, c_str_path));
+}
+
+void NNFW_SESSION::train_import_checkpoint(const py::str &path)
+{
+  const char *c_str_path = path.cast<std::string>().c_str();
+  ensure_status(nnfw_train_import_checkpoint(session, c_str_path));
+}
+
+void NNFW_SESSION::train_export_checkpoint(const py::str &path)
+{
+  const char *c_str_path = path.cast<std::string>().c_str();
+  ensure_status(nnfw_train_export_checkpoint(session, c_str_path));
+}
+
+//////////////////////////////////////////////
+// Optional APIs for training
+//////////////////////////////////////////////
+// nnfw_tensorinfo NNFW_SESSION::train_input_tensorinfo(uint32_t index)
+// {
+//   nnfw_tensorinfo tensorinfo = nnfw_tensorinfo();
+//   ensure_status(nnfw_train_input_tensorinfo(session, index, &tensorinfo));
+//   return tensorinfo;
+// }
+
+// nnfw_tensorinfo NNFW_SESSION::train_expected_tensorinfo(uint32_t index)
+// {
+//   nnfw_tensorinfo tensorinfo = nnfw_tensorinfo();
+//   ensure_status(nnfw_train_expected_tensorinfo(session, index, &tensorinfo));
+//   return tensorinfo;
+// }

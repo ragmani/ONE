@@ -15,6 +15,7 @@
  */
 
 #include "nnfw.h"
+#include "nnfw_experimental.h"
 
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
@@ -159,4 +160,50 @@ public:
   void set_output_layout(uint32_t index, const char *layout);
   tensorinfo input_tensorinfo(uint32_t index);
   tensorinfo output_tensorinfo(uint32_t index);
+
+  //////////////////////////////////////////////
+  // Experimental APIs for training
+  //////////////////////////////////////////////
+  nnfw_train_info train_get_traininfo();
+  void train_set_traininfo(const nnfw_train_info *info);
+
+  template <typename T> void train_set_input(uint32_t index, py::array_t<T> &buffer)
+  {
+    nnfw_tensorinfo tensor_info;
+    nnfw_train_input_tensorinfo(this->session, index, &tensor_info);
+
+    ensure_status(nnfw_train_set_input(session, index, buffer.request().ptr, &tensor_info));
+  }
+  template <typename T> void train_set_expected(uint32_t index, py::array_t<T> &buffer)
+  {
+    nnfw_tensorinfo tensor_info;
+    nnfw_train_expected_tensorinfo(this->session, index, &tensor_info);
+
+    ensure_status(nnfw_train_set_expected(session, index, buffer.request().ptr, &tensor_info));
+  }
+  template <typename T> void train_set_output(uint32_t index, py::array_t<T> &buffer)
+  {
+    nnfw_tensorinfo tensor_info;
+    nnfw_output_tensorinfo(this->session, index, &tensor_info);
+    NNFW_TYPE type = tensor_info.dtype;
+    uint32_t output_elements = num_elems(&tensor_info);
+    size_t length = sizeof(T) * output_elements;
+
+    ensure_status(nnfw_train_set_output(session, index, type, buffer.request().ptr, length));
+  }
+
+  void train(bool update_weights);
+  float train_get_loss(uint32_t index);
+
+  void train_export_circle(const py::str &path);
+  void train_import_checkpoint(const py::str &path);
+  void train_export_checkpoint(const py::str &path);
+
+  //////////////////////////////////////////////
+  // Optional APIs for training
+  //////////////////////////////////////////////
+  // nnfw_tensorinfo train_input_tensorinfo(uint32_t index);
+  // nnfw_tensorinfo train_expected_tensorinfo(uint32_t index);
+
+  // TODO Add other apis
 };

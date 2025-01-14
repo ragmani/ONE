@@ -14,79 +14,68 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
-import json
 import os
 import shutil
 import sys
+import json
+import argparse
 
 
-def _is_json(myjson):
+def is_json(file):
     try:
-        json.load(myjson)
-    except ValueError as e:
+        json.load(file)
+        file.seek(0) # Reset file pointer after reading
+        return True
+    except ValueError:
         return False
-    return True
 
 
-def _verify_args(args):
+def verify_args(args):
+    # Check if the number of config files matches the number of models
     if args.config and len(args.config) != len(args.models):
-        raise Exception(
-            'error: when config file is provided, # of config file should be same with modelfile\n'
-            +
-            "Please provide config file for each model file, or don't provide config file."
-        )
+        raise ValueError(
+            "The number of config files must match the number of model files.")
 
-    for i in range(len(args.models)):
-        model_path = args.models[i]
+    # Check existence and validity of model files
+    for model_path in args.models:
         if not os.path.isfile(model_path):
-            raise Exception(f'error: {model_path} does not exist.')
+            raise FileNotFoundError(f"Model file not found: {model_path}")
 
-        modelfile = os.path.basename(model_path)
-        if len(modelfile.split('.')) == 1:
-            raise Exception(
-                'error: modelfile does not have extension.\n' +
-                "Please provide extension so that $progname can identify what type of model you use."
-            )
+        if '.' not in os.path.basename(model_path):
+            raise ValueError("Model file must have an extension.")
 
-        if args.config:
-            config_path = os.path.basename(args.config[i])
+    # Check existence of config files
+    if args.config:
+        for config_path in args.config:
             if not os.path.isfile(config_path):
-                raise Exception(f'error: {config_path} does not exist.')
+                raise FileNotFoundError(f"Config file not found: {config_path}")
 
-    # Check each json file
-    for io_info_path in [path for path in (args.io_info or [])]:
-        with open(io_info_path, "r") as io_json:
-            if not _is_json(io_json):
-                raise Exception(
-                    f'error: io info file {io_info_path} is not json file.\n' +
-                    "Please provide json file that so that $progname can identify what inputs/outputs of model you use."
-                )
-
-    # Check size of indices of original model
+    # Check IO info files and size of indices
     size_inputs = 0
     size_outputs = 0
-    for model_index, io_info_path in enumerate([path for path in (args.io_info or [])]):
+    for model_index, io_info_path in enumerate(args.io_info or []):
         with open(io_info_path, "r") as io_json:
+            if not is_json(io_json):
+                    raise ValueError(f"IO info file is not valid JSON: {io_info_path}")
+
             model_io = json.load(io_json)
             if model_index == 0:
                 size_inputs = len(model_io["org-model-io"]["inputs"]["new-indices"])
                 size_outputs = len(model_io["org-model-io"]["outputs"]["new-indices"])
             else:
                 if size_inputs != len(model_io["org-model-io"]["inputs"]["new-indices"]):
-                    raise Exception(
-                        f'error: Invalid size of input indices\n' +
-                        "The size of orginal model's inputs in io info file {io_info_path} is different from the previous files."
+                    raise ValueError(
+                        f"Invalid size of input indices in {io_info_path}. "
+                        "Input size differs from previous files."
                     )
-                if size_outputs != len(
-                        model_io["org-model-io"]["outputs"]["new-indices"]):
-                    raise Exception(
-                        f'error: Invalid size of output indices.\n' +
-                        "The size of orginal model's outputs in io info file {io_info_path} is different from the previous files."
+                if size_outputs != len(model_io["org-model-io"]["outputs"]["new-indices"]):
+                    raise ValueError(
+                        f"Invalid size of output indices in {io_info_path}. "
+                        "Output size differs from previous files."
                     )
 
 
-def _get_args():
+def parse_args():
     parser = argparse.ArgumentParser(
         description='Convert model files (tflite, circle or tvn) to nnpkg.',
         usage=''' %(prog)s [options]
@@ -98,188 +87,210 @@ def _get_args():
       %(prog)s -o out -p addpkg -m a1.tflite a2.tflite -i a1.json a2.json
         => create nnpkg "addpkg" with models a1.tflite and a2.tflite in out/
   ''')
-    parser.add_argument('-o',
-                        '--outdir',
-                        type=str,
-                        default=os.getcwd(),
-                        metavar='output_directory',
-                        help='set nnpkg output directory')
-    parser.add_argument('-p',
-                        '--nnpkg-name',
-                        type=str,
-                        metavar='nnpkg_name',
-                        help='set nnpkg output name (default=[1st modelfile name])')
-    parser.add_argument('-c',
-                        '--config',
-                        type=str,
-                        nargs='+',
-                        default='',
-                        metavar='conf',
-                        help='provide configuration files')
-    parser.add_argument('-m',
-                        '--models',
-                        type=str,
-                        nargs='+',
-                        metavar='model',
-                        help='provide model files')
-    parser.add_argument('-i',
-                        '--io-info',
-                        type=str,
-                        nargs='+',
-                        metavar='io_info',
-                        help='provide io info')
+    parser.add_argument(
+        "-o", "--outdir",
+        type=str,
+        default=os.getcwd(),
+        help="Output directory for nnpkg."
+    )
+    parser.add_argument(
+        "-p", "--nnpkg-name",
+        type=str,
+        help="Name of the output nnpkg (default: based on the first model file)."
+    )
+    parser.add_argument(
+        "-c", "--config",
+        type=str,
+        nargs="*",
+        default='',
+        help="Configuration files for the models."
+    )
+    parser.add_argument(
+        "-m", "--models",
+        type=str,
+        nargs="+",
+        required=True,
+        help="Model files to be converted."
+    )
+    parser.add_argument(
+        "-i", "--io-info",
+        type=str,
+        nargs="+",
+        help="IO information JSON files for the models."
+    )
 
     args = parser.parse_args()
-
-    _verify_args(args)
+    verify_args(args)
 
     if not args.nnpkg_name:
-        first_model_name = os.path.basename(args.models[0]).rsplit('.', 1)[0]
-        args.nnpkg_name = first_model_name
-
-    args.prog = parser.prog
+        args.nnpkg_name = os.path.splitext(os.path.basename(args.models[0]))[0]
 
     return args
 
 
-def _get_org_model_input_size(json_path):
-    with open(json_path, "r") as io_json:
-        model_io = json.load(io_json)
-        return len(model_io["org-model-io"]["inputs"]["new-indices"])
+def load_json(path):
+    with open(path, "r") as file:
+        return json.load(file)
 
 
-def _get_org_model_output_size(json_path):
-    with open(json_path, "r") as io_json:
-        model_io = json.load(io_json)
-        return len(model_io["org-model-io"]["outputs"]["new-indices"])
+# def generate_manifest(args):
+#     io_info_files = args.io_info or []
+#     pkg_inputs, pkg_outputs = [], []
+#     model_connections = []
 
+#     if io_info_files:
+#         base_io = load_json(io_info_files[0])
+#         pkg_inputs = list(range(len(base_io["org-model-io"]["inputs"]["new-indices"])))
+#         pkg_outputs = list(range(len(base_io["org-model-io"]["outputs"]["new-indices"])))
 
-def _generate_io_conn_info(io_info_files):
-    ret = {}
+#         for model_pos, io_path in enumerate(io_info_files):
+#             io_data = load_json(io_path)
+#             new_inputs = io_data["new-model-io"]["inputs"]["new-indices"]
+#             new_outputs = io_data["new-model-io"]["outputs"]["new-indices"]
 
-    if io_info_files is None:
-        return ret
+#             for idx, new_index in enumerate(
+#                     io_data["org-model-io"]["inputs"]["new-indices"]):
+#                 if new_index != -1:
+#                     pkg_inputs[idx] = f"{model_pos}:0:{new_inputs.index(new_index)}"
 
-    pkg_inputs = list(range(_get_org_model_input_size(io_info_files[0])))
-    pkg_outputs = list(range(_get_org_model_output_size(io_info_files[0])))
+#             for idx, new_index in enumerate(
+#                     io_data["org-model-io"]["outputs"]["new-indices"]):
+#                 if new_index != -1:
+#                     pkg_outputs[idx] = f"{model_pos}:0:{new_outputs.index(new_index)}"
 
-    org_model_io = []
-    new_model_io = {"inputs": [], "outputs": []}
-    for model_pos, io_info_path in enumerate(io_info_files):
-        with open(io_info_path, "r") as io_json:
-            model_io = json.load(io_json)
+#             for inp_idx, org_input in enumerate(
+#                     io_data["new-model-io"]["inputs"]["org-indices"]):
+#                 for out_idx, org_output in enumerate(
+#                         io_data["new-model-io"]["outputs"]["org-indices"]):
+#                     if org_input == org_output:
+#                         model_connections.append({
+#                             "from": f"{model_pos}:0:{out_idx}",
+#                             "to": f"{model_pos}:0:{inp_idx}"
+#                         })
 
-            org_model_io.append(model_io["org-model-io"])
-            new_model_io["inputs"].append(model_io["new-model-io"]["inputs"])
-            new_model_io["outputs"].append(model_io["new-model-io"]["outputs"])
+#     return {
+#         "major-version": "1",
+#         "minor-version": "2",
+#         "patch-version": "0",
+#         "configs": args.config or [],
+#         "models": [os.path.basename(m) for m in args.models],
+#         "model-types": [os.path.splitext(m)[1][1:] for m in args.models],
+#         "pkg-inputs": pkg_inputs,
+#         "pkg-outputs": pkg_outputs,
+#         "model-connect": model_connections,
+#     }
 
-    for model_pos in range(len(org_model_io)):
-        # Set pkg-inputs
-        for org_model_input_pos, new_input_index in enumerate(
-                org_model_io[model_pos]["inputs"]["new-indices"]):
-            if new_input_index != -1:
-                for new_model_input_pos, input_index in enumerate(
-                        new_model_io["inputs"][model_pos]["new-indices"]):
-                    if new_input_index == input_index:
-                        pkg_inputs[
-                            org_model_input_pos] = f'{model_pos}:0:{new_model_input_pos}'
-                        break
+# import json
 
-                if pkg_inputs[org_model_input_pos] == 0:
-                    raise Exception(
-                        f'error: Wrong io information\n' +
-                        "The input index {new_input_index} exists in org-model-io, but not in new-model-io\n"
-                        + "Please check {io_info_files[model_pos]}")
+def generate_manifest(io_info_paths, major_version="1", minor_version="2", patch_version="0"):
+    """
+    Generate a manifest file with `model-connect` and additional package information.
 
-        # Set pkg-outputs
-        for org_model_output_pos, new_output_index in enumerate(
-                org_model_io[model_pos]["outputs"]["new-indices"]):
-            if new_output_index != -1:
-                for new_model_output_pos, output_index in enumerate(
-                        new_model_io["outputs"][model_pos]["new-indices"]):
-                    if new_output_index == output_index:
-                        pkg_outputs[
-                            org_model_output_pos] = f'{model_pos}:0:{new_model_output_pos}'
-                        break
+    Args:
+        io_info_paths (list): List of file paths to the JSON IO info files.
+        major_version (str): Major version of the manifest.
+        minor_version (str): Minor version of the manifest.
+        patch_version (str): Patch version of the manifest.
 
-                if pkg_outputs[org_model_output_pos] == 0:
-                    raise Exception(
-                        f'error: Wrong io information\n' +
-                        "The output index {new_output_index} exists in org-model-io, but not in new-model-io\n"
-                        + "Please check {io_info_files[model_pos]}")
+    Returns:
+        dict: Manifest dictionary with `model-connect` and additional metadata.
+    """
+    model_connect = []
+    models = []
+    model_types = []
+    pkg_inputs = []
+    pkg_outputs = []
 
-    ret["pkg-inputs"] = pkg_inputs
-    ret["pkg-outputs"] = pkg_outputs
+    # Load all JSON files and store their parsed data
+    model_io_data = []
+    io_info_files = io_info_paths or []
+    for idx, path in enumerate(io_info_files):
+        with open(path, "r") as file:
+            try:
+                model_io_data.append(json.load(file))
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON file at {path}: {e}")
 
-    model_connect = {}
-    for input_model_pos, inputs in enumerate(new_model_io["inputs"]):
-        for output_model_pos, outputs in enumerate(new_model_io["outputs"]):
-            if input_model_pos == output_model_pos:
-                continue
+        # Add model filenames and types (assume TFLite for now)
+        models.append(f"i{idx + 1}.tflite")
+        model_types.append("tflite")
 
-            for input_index_pos, org_input_index in enumerate(inputs["org-indices"]):
-                for output_index_pos, org_output_index in enumerate(
-                        outputs["org-indices"]):
-                    if org_input_index == org_output_index:
-                        edge_to = f'{input_model_pos}:0:{input_index_pos}'
-                        edge_from = f'{output_model_pos}:0:{output_index_pos}'
+    # Generate model-connect data
+    for model_idx, model_io in enumerate(model_io_data):
+        new_model_outputs = model_io["new-model-io"]["outputs"]
 
-                        if edge_from not in model_connect:
-                            model_connect[edge_from] = [edge_to]
-                        else:
-                            model_connect[edge_from].append(edge_to)
+        # Connect outputs to next model's inputs
+        for _, output_indices in new_model_outputs.items():
+            for output_idx, output_value in enumerate(output_indices):
+                current_from = f"{model_idx}:0:{output_idx}"
 
-    ret["model-connect"] = [{
-        "from": edge_from,
-        "to": edge_to
-    } for edge_from, edge_to in model_connect.items()]
+                connections = []
+                for next_model_idx, next_model_io in enumerate(model_io_data[model_idx + 1:], start=model_idx + 1):
+                    next_model_inputs = next_model_io["new-model-io"]["inputs"]
 
-    return ret
+                    # Check matching indices in the next model's inputs
+                    for _, input_indices in next_model_inputs.items():
+                        if output_value in input_indices:
+                            next_input_index = input_indices.index(output_value)
+                            connection = f"{next_model_idx}:0:{next_input_index}"
+                            if connection not in connections:
+                                connections.append(connection)
 
+                if connections:
+                    model_connect.append({
+                        "from": current_from,
+                        "to": connections
+                    })
 
-def _generate_manifest(args):
-    config_list = [""]
-    if args.config:
-        config_list = [os.path.basename(e) for e in args.config]
-    models_list = [os.path.basename(e) for e in args.models]
-    types_list = [os.path.basename(e).rsplit('.', 1)[1] for e in args.models]
-    io_conn_info = _generate_io_conn_info(args.io_info)
+    # Define package inputs and outputs
+    first_model_inputs = model_io_data[0]["new-model-io"]["inputs"]["new-indices"]
+    last_model_outputs = model_io_data[len(io_info_paths) - 1]["new-model-io"]["outputs"]["new-indices"]
 
-    manifest = {}
-    manifest["major-version"] = "1"
-    manifest["minor-version"] = "2"
-    manifest["patch-version"] = "0"
-    manifest["configs"] = config_list
-    manifest["models"] = models_list
-    manifest["model-types"] = types_list
-    manifest = {**manifest, **io_conn_info}  # Requires python 3.5 or greater
+    pkg_inputs = [f"0:0:{i}" for i in range(len(first_model_inputs))]
+    pkg_outputs = [f"{len(io_info_paths) - 1}:0:{i}" for i in range(len(last_model_outputs))]
 
+    # Build the manifest
+    manifest = {
+        "major-version": major_version,
+        "minor-version": minor_version,
+        "patch-version": patch_version,
+        "configs": [""],
+        "models": models,
+        "model-types": model_types,
+        "pkg-inputs": pkg_inputs,
+        "pkg-outputs": pkg_outputs,
+        "model-connect": model_connect
+    }
     return manifest
 
 
 def main():
     try:
         # parse arguments
-        args = _get_args()
+        args = parse_args()
 
-        print(f'{args.prog}: Generating nnpkg {args.nnpkg_name} in {args.outdir}')
         # mkdir nnpkg directory
         nnpkg_path = os.path.join(args.outdir, args.nnpkg_name)
-        os.makedirs(os.path.join(nnpkg_path, 'metadata'), exist_ok=True)
+        metadata_path = os.path.join(nnpkg_path, 'metadata')
+        os.makedirs(metadata_path, exist_ok=True)
 
         # dump manifest file
-        manifest = _generate_manifest(args)
-        manifest_path = os.path.join(nnpkg_path, 'metadata', 'MANIFEST')
-        with open(manifest_path, "w") as json_file:
-            json_file.write(f'{json.dumps(manifest, indent=2)}\n')
+        manifest = generate_manifest(args.io_info)
+        with open(os.path.join(metadata_path, "MANIFEST"), "w") as manifest_file:
+            json.dump(manifest, manifest_file, indent=2)
 
         # copy models and configurations
-        for i in range(len(args.models)):
-            shutil.copy2(args.models[i], nnpkg_path)
-            if args.config:
-                shutil.copy2(args.config[i], os.path.join(nnpkg_path, 'metadata'))
+        for model in args.models:
+            shutil.copy2(model, nnpkg_path)
+
+        if args.config:
+            for config in args.config:
+                shutil.copy2(config, metadata_path)
+
+        print(f"nnpkg {args.nnpkg_name} generated at {args.outdir}")
+
     except Exception as e:
-        print(e)
+        print(f"Error: {e}")
         sys.exit(1)
 
 
